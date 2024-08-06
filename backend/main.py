@@ -1,4 +1,3 @@
-# backend/main.py
 from fastapi import FastAPI, File, UploadFile
 import cv2
 import numpy as np
