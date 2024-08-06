@@ -15,7 +15,13 @@ async def detect(file: UploadFile = File(...)):
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     results = model(img)
-    detections = results.pandas().xyxy[0].to_dict(orient="records")
+    
+    # Converting results to pandas DataFrame
+    results_df = results.pandas().xyxy[0] if hasattr(results, 'pandas') else None
+    if results_df is None:
+        return {"error": "Failed to process results"}
+    
+    detections = results_df.to_dict(orient="records")
     return {"detections": detections}
 
 if __name__ == "__main__":
