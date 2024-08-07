@@ -1,0 +1,7 @@
+train: dataset\train\jpg
+val: dataset\val\jpg
+test: dataset\test\jpg
+ 
+nc: 6
+ 
+names: ['alcohol','Insulting gestures','blood','cigarette','gun','knife']
