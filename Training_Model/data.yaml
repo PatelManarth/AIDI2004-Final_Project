@@ -1,6 +1,6 @@
-train: dataset\train\jpg
-val: dataset\val\jpg
-test: dataset\test\jpg
+train: D:\AIDI\SEM-2\AI IN ENTERPRISE SYSTEMS\final project\Final_Project\datasets\train\jpg
+val: D:\AIDI\SEM-2\AI IN ENTERPRISE SYSTEMS\final project\Final_Project\datasets\val\jpg
+test: D:\AIDI\SEM-2\AI IN ENTERPRISE SYSTEMS\final project\Final_Project\datasets\test\jpg
  
 nc: 6
  
