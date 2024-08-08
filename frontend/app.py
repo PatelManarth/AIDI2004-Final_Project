@@ -15,10 +15,21 @@ FRAME_WINDOW = st.image([])
 
 def detect_objects(frame):
     _, img_encoded = cv2.imencode('.jpg', frame)
-    response = requests.post("http://localhost:8000/detect", files={"file": ("frame.jpg", img_encoded.tobytes(), "image/jpeg")})
-    print(response.text)  # or response.content
+    try:
+        response = requests.post("http://localhost:8000/detect", files={"file": ("frame.jpg", img_encoded.tobytes(), "image/jpeg")})
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        
+        st.write("Backend response status:", response.status_code)
+        st.write("Backend response content:", response.content)
 
-    return response.json().get('detections', [])
+        detections = response.json().get('detections', [])
+        return detections
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {e}")
+        return []
+    except ValueError:
+        st.error("Invalid JSON response")
+        return []
 
 cap = cv2.VideoCapture(0)
 results = []
