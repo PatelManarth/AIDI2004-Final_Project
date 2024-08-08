@@ -1,0 +1,15 @@
+#Change all paths with the actual dataset path for your computer.
+
+train: D:/AIDI/SEM-2/AI IN ENTERPRISE SYSTEMS/final project/Final_Project/datasets/train/images
+val: D:/AIDI/SEM-2/AI IN ENTERPRISE SYSTEMS/final project/Final_Project/datasets/val/images
+test: D:/AIDI/SEM-2/AI IN ENTERPRISE SYSTEMS/final project/Final_Project/datasets/test/images
+ 
+
+
+names:
+  0: alcohol
+  1: Insulting gestures
+  2: blood
+  3: cigarette
+  4: gun
+  5: knife
