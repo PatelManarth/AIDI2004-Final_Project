@@ -9,7 +9,7 @@ __pycache__/
 *$py.class
 **/__pycache__/
 /Training_Model/dataset
-
+/temp
 # C extensions
 *.so
 
