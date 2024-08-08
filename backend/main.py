@@ -24,7 +24,7 @@ async def detect(file: UploadFile = File(...)):
             raise ValueError("Could not decode image")
 
         # Run object detection
-        results = model.predict(source=image)
+        results = model.predict(source=image,conf=0.75)
 
         # Initialize detections list
         detections = []
