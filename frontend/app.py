@@ -13,16 +13,16 @@ st.title("Dangerous Object Detection")
 
 # Input fields and controls in Streamlit
 event_name = st.text_input("Enter Event Name")
-start_detection = st.button('Start Detection', key='start_button')
+start_detection = st.button('Start Detection')
+stop_detection = st.button('Stop Detection')
+
+# Manage session state for detection
+if "detection_running" not in st.session_state:
+    st.session_state.detection_running = False
+if "results" not in st.session_state:
+    st.session_state.results = []
 
 FRAME_WINDOW = st.image([])  # To display the video frames
-results = []
-pdf = FPDF()
-pdf.set_auto_page_break(auto=True, margin=15)
-pdf.add_page()
-
-# Global variable to track the state of detection
-detection_running = False
 
 def detect_objects(frame):
     try:
@@ -56,13 +56,17 @@ def detect_objects(frame):
 
 def save_pdf():
     try:
-        for result in results:
-            frame = result["frame"]
-            detection = result["detection"]
-            label = detection['name']
-            confidence = detection['confidence']
-            timestamp = result["timestamp"]
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
 
+        for result in st.session_state.results:
+            frame = result["frame"]
+            detection = result.get("detection", {})
+            label = detection.get('name', 'Unknown')
+            confidence = detection.get('confidence', 0.0)
+            timestamp = result.get("timestamp", 'Unknown time')
+
+            pdf.add_page()
             pdf.set_font("Arial", size=12)
             pdf.cell(200, 10, txt=f"Detection: {label} with confidence {confidence:.2f} at {timestamp}", ln=True)
 
@@ -72,40 +76,35 @@ def save_pdf():
             pdf.image(img_path, x=10, y=None, w=100)
             os.remove(img_path)  # Clean up the temporary image file
 
-        results.clear()
+        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+         # Get the absolute path to the 'saved-pdf' directory
+        save_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'saved-pdf'))
+        
+        # Ensure the directory exists
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # Create the full path for the PDF file
+        save_path = os.path.join(save_dir, f"{now}_{event_name}.pdf")
+        pdf.output(save_path)
+       
+        st.success(f"Results saved to {save_path}")
 
     except Exception as e:
         st.error(f"Failed to save PDF: {str(e)}")
 
-def finalize_pdf():
-    try:
-        # Create the "SAVED PDF" folder if it doesn't exist
-        save_folder = os.path.join(os.getcwd(), "../SAVED-PDFs")
-        if not os.path.exists(save_folder):
-            os.makedirs(save_folder)
+# Start detection process
+if start_detection and not st.session_state.detection_running:
+    st.session_state.detection_running = True
+    st.session_state.results = []
 
-        # Save the PDF with the current date, time, and event name
-        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        pdf_file_name = f"{now}_{event_name}.pdf"
-        pdf_file_path = os.path.join(save_folder, pdf_file_name)
-        pdf.output(pdf_file_path)
-
-        st.success(f"Results saved to {pdf_file_path}")
-
-    except Exception as e:
-        st.error(f"Failed to save final PDF: {str(e)}")
-
-# Start the detection process when the button is clicked
-if start_detection:
-    detection_running = True
     cap = cv2.VideoCapture(0)
-    stop_detection=st.button("Stop Detection", key='stop_button')
+
     if not cap.isOpened():
         st.error("Failed to open camera. Please check if the camera is connected properly.")
     else:
-        frame_count = 0
-        
-        while detection_running:
+        while st.session_state.detection_running:
             ret, frame = cap.read()
             if not ret:
                 st.error("Failed to read from camera.")
@@ -120,24 +119,21 @@ if start_detection:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                results.append({
+                st.session_state.results.append({
                     "frame": cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
                     "detection": detection,
                     "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
 
             FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            frame_count += 1
 
-            if frame_count >= 1:  # Save PDF after every frame
-                save_pdf()
-                frame_count = 0  # Reset frame count and continue detection
-
-            # Stop detection if the "Stop Detection" button is clicked
             if stop_detection:
-                detection_running = False
+                st.session_state.detection_running = False
+                cap.release()
                 save_pdf()
                 break
 
-        cap.release()
-        finalize_pdf()  # Save the final PDF when detection loop is stopped
+if stop_detection and st.session_state.detection_running:
+    st.session_state.detection_running = False
+    st.session_state.results.append({"frame": np.zeros((100, 100, 3), dtype=np.uint8), "detection": {}, "timestamp": "Detection Stopped"})
+    save_pdf()
