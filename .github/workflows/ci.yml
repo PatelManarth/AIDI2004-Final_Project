@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: "docker:latest"
+        options: "--privileged"
+        ports:
+          - 8000:8000
+          - 8501:8501
+
+    steps:
+    # Step 1: Checkout the code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Python environment
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # Step 4: Run the tests
+    - name: Run pytest
+      run: |
+        pytest test_dangerous_object_detection.py --maxfail=1 --disable-warnings
+
+    # Step 5: Deploy the application (Optional)
+    # This step can be expanded to deploy your application to a server or cloud provider.
+    #- name: Deploy to Production Server (Dummy Step)
+     # run: echo "Deploying application..."
+    #  if: success()
+
+    # Step 6: Clean up (Optional)
+    - name: Cleanup
+      run: |
+        echo "Cleaning up..."
+
