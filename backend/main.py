@@ -1,36 +1,52 @@
-from fastapi import FastAPI, File, UploadFile
-import cv2
+from fastapi import FastAPI, File, UploadFile, HTTPException
 import numpy as np
-import uvicorn
+import cv2
 from ultralytics import YOLO
 
 app = FastAPI()
 
-model = YOLO("yolov8n.pt")
-
-
+# Load the YOLOv8 model
+model = YOLO('yolov8n.pt')  # Ensure you have the correct path to your YOLOv8 model file
 
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    results = model(img)
+    try:
+        # Read the image file
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    detections = []
-    for result in results:
-        for box in result.boxes:
-            detections.append({
-                "xmin": box.xmin.item(),
-                "ymin": box.ymin.item(),
-                "xmax": box.xmax.item(),
-                "ymax": box.ymax.item(),
-                "confidence": box.confidence.item(),
-                "class": box.cls.item(),
-                "name": result.names[int(box.cls.item())]
-            })
+        # Ensure the image was correctly decoded
+        if image is None:
+            raise ValueError("Could not decode image")
 
-    return {"detections": detections}
+        # Run object detection
+        results = model.predict(source=image)
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        # Initialize detections list
+        detections = []
+
+        # Process detection results
+        for result in results:
+            for box in result.boxes:
+                # Extract bounding box coordinates and other details
+                x1, y1, x2, y2 = box.xyxy[0]  # Properly unpack coordinates
+                confidence = box.conf
+                label = box.cls
+
+                detections.append({
+                    "xmin": int(x1),
+                    "ymin": int(y1),
+                    "xmax": int(x2),
+                    "ymax": int(y2),
+                    "name": model.names[int(label)],  # Get class name from model
+                    "confidence": float(confidence),
+                })
+
+        # Return JSON response
+        return {"detections": detections}
+
+    except Exception as e:
+        # Log exception and return a 500 error
+        print(f"Error processing image: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
