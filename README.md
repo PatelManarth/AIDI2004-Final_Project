@@ -149,8 +149,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For any inquiries, you can reach out to:
 
 - **Author:** Manarth Patel
-- **Email:** [your-email@example.com](mailto:manarthpatel237@gmail.com)
-- **LinkedIn:** [Your LinkedIn Profile](https://www.linkedin.com/in/manarthpatel)
+- **Email:** [manarthpatel237@gmail.com](mailto:manarthpatel237@gmail.com)
+- **LinkedIn:** [https://www.linkedin.com/in/manarthpatel](https://www.linkedin.com/in/manarthpatel)
 
 ---
 
