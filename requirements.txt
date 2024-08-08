@@ -95,10 +95,3 @@ urllib3==2.2.2
 uvicorn==0.30.5
 watchdog==4.0.1
 wcwidth==0.2.13
-
-
-/datasets/all
-/datasets/class
-/datasets/test
-/datasets/train
-/datasets/val
