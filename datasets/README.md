@@ -1,4 +1,4 @@
-Download dataset and extrat to the folder manually or just run the given data.py file
+This Dataset has been taken from the following Github Repo
 
 
-Datalink = ""
+Dataset link = "https://github.com/poori-nuna/HOD-Benchmark-Dataset/tree/main/dataset"
