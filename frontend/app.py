@@ -3,15 +3,16 @@ import cv2
 import requests
 import numpy as np
 from PIL import Image
-import time
 from fpdf import FPDF
 import datetime
 
+# Set the title of the Streamlit app
 st.title("Dangerous Object Detection")
 
+# Input fields and controls in Streamlit
 event_name = st.text_input("Enter Event Name")
 run = st.checkbox('Run')
-FRAME_WINDOW = st.image([])
+FRAME_WINDOW = st.image([])  # To display the video frames
 
 def detect_objects(frame):
     try:
@@ -43,45 +44,48 @@ def detect_objects(frame):
         st.error(f"JSON Decode Error: {str(e)}")
         return []
 
+# Open a connection to the default camera
 cap = cv2.VideoCapture(0)
 results = []
 
 while run:
-    ret, frame = cap.read()
+    ret, frame = cap.read()  # Capture a frame from the camera
     if not ret:
         st.error("Failed to read from camera.")
         break
 
-    # Capture frame every 5 seconds
-    if int(time.time()) % 5 == 0:
-        detections = detect_objects(frame)
+    # Detect objects in the current frame
+    detections = detect_objects(frame)
 
-        for detection in detections:
-            x1, y1, x2, y2 = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(detection['ymax'])
-            label = detection['name']
-            confidence = detection['confidence']
+    # Process each detection
+    for detection in detections:
+        x1, y1, x2, y2 = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(detection['ymax'])
+        label = detection['name']
+        confidence = detection['confidence']
 
-            # Draw rectangle and label on the frame
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # Draw a rectangle and label on the frame
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            # Save the detection result
-            results.append({
-                "frame": cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                "detection": detection
-            })
+        # Save the detection result for later use
+        results.append({
+            "frame": cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+            "detection": detection
+        })
 
-    # Display the frame in Streamlit
+    # Display the current frame in Streamlit
     FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
+# Release the camera when done
 cap.release()
 
-# Save results to PDF
+# Save results to PDF when the button is clicked
 if st.button("Save Results to PDF"):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
+    # Add detection results to the PDF
     for result in results:
         frame = result["frame"]
         detection = result["detection"]
