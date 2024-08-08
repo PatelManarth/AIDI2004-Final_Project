@@ -8,7 +8,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 **/__pycache__/
-
+/Training_Model/dataset
+/temp
+/datasets/all
+/datasets/class
+/datasets/test
+/datasets/train
+/datasets/val
 # C extensions
 *.so
 
