@@ -1,3 +1,5 @@
+#Change all paths with the actual dataset path for your computer.
+
 train: D:\AIDI\SEM-2\AI IN ENTERPRISE SYSTEMS\final project\Final_Project\datasets\train\jpg
 val: D:\AIDI\SEM-2\AI IN ENTERPRISE SYSTEMS\final project\Final_Project\datasets\val\jpg
 test: D:\AIDI\SEM-2\AI IN ENTERPRISE SYSTEMS\final project\Final_Project\datasets\test\jpg
