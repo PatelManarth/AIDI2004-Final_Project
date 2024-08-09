@@ -29,7 +29,7 @@ def detect_objects(frame):
     try:
         _, img_encoded = cv2.imencode('.jpg', frame)
         response = requests.post(
-            "http://127.0.0.1:8000/detect",
+            "http://20.220.16.247/detection",
             files={"file": ("frame.jpg", img_encoded.tobytes(), "image/jpeg")}
         )
 
