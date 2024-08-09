@@ -7,7 +7,7 @@ from fpdf import FPDF
 import datetime
 import time
 import os
-from config import full_paths
+from ..config import full_paths
 
 pdf_save_path = full_paths['saved_pdf']
 
