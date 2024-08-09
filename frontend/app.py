@@ -1,15 +1,13 @@
 import streamlit as st
-import cv2
 import requests
-import numpy as np
-from PIL import Image
-from fpdf import FPDF
 import datetime
 import time
 import os
-from ..config import full_paths
-
-pdf_save_path = full_paths['saved_pdf']
+from PIL import Image
+from fpdf import FPDF
+import numpy as np
+import cv2
+import base64
 
 # Set the title of the Streamlit app
 st.title("Dangerous Object Detection")
@@ -31,7 +29,7 @@ def detect_objects(frame):
     try:
         _, img_encoded = cv2.imencode('.jpg', frame)
         response = requests.post(
-            "http://20.220.16.247/detection/",
+            "http://127.0.0.1:8000/detect",
             files={"file": ("frame.jpg", img_encoded.tobytes(), "image/jpeg")}
         )
 
@@ -81,7 +79,7 @@ def save_pdf():
 
         now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-         # Get the absolute path to the 'saved-pdf' directory
+        # Get the absolute path to the 'saved-pdf' directory
         save_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'saved-pdf'))
         
         # Ensure the directory exists
@@ -96,6 +94,44 @@ def save_pdf():
 
     except Exception as e:
         st.error(f"Failed to save PDF: {str(e)}")
+
+
+# HTML and JavaScript to access the camera
+st.markdown("""
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <script>
+        var video = document.getElementById('video');
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.play();
+            });
+
+        function captureFrame() {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var dataURL = canvas.toDataURL('image/jpeg');
+            return dataURL;
+        }
+
+        function sendFrame() {
+            var frame = captureFrame();
+            Streamlit.setComponentValue(frame);
+        }
+
+        var intervalId;
+        Streamlit.events.startDetection = function() {
+            intervalId = setInterval(sendFrame, 500);  // Capture and send frames every 500ms
+        };
+
+        Streamlit.events.stopDetection = function() {
+            clearInterval(intervalId);
+        };
+    </script>
+""", unsafe_allow_html=True)
 
 # Start detection process
 if start_detection and not st.session_state.detection_running:
@@ -113,7 +149,10 @@ if start_detection and not st.session_state.detection_running:
                 st.error("Failed to read from camera.")
                 break
 
+            # Detect objects in the frame
             detections = detect_objects(frame)
+
+            # Draw bounding boxes and labels on the frame
             for detection in detections:
                 x1, y1, x2, y2 = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(detection['ymax'])
                 label = detection['name']
@@ -128,15 +167,20 @@ if start_detection and not st.session_state.detection_running:
                     "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
 
+            # Update the frame in Streamlit
             FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-            if stop_detection:
-                st.session_state.detection_running = False
-                cap.release()
-                save_pdf()
-                break
+        # Release the camera after detection stops
+        cap.release()
+        save_pdf()
+
+    if stop_detection:
+        st.session_state.detection_running = False
+        st.session_state.results.append({"frame": np.zeros((100, 100, 3), dtype=np.uint8), "detection": {}, "timestamp": "Detection Stopped"})
+        save_pdf()
+        st.stop()
 
 if stop_detection and st.session_state.detection_running:
     st.session_state.detection_running = False
-    st.session_state.results.append({"frame": np.zeros((100, 100, 3), dtype=np.uint8), "detection": {}, "timestamp": "Detection Stopped"})
     save_pdf()
+    st.stop()
