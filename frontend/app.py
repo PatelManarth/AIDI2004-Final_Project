@@ -1,15 +1,12 @@
 import streamlit as st
-import cv2
 import requests
 import numpy as np
 from PIL import Image
 from fpdf import FPDF
 import datetime
 import time
-import os
-from config import full_paths
-
-pdf_save_path = full_paths['saved_pdf']
+import base64
+import cv2
 
 # Set the title of the Streamlit app
 st.title("Dangerous Object Detection")
@@ -81,15 +78,7 @@ def save_pdf():
 
         now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-         # Get the absolute path to the 'saved-pdf' directory
-        save_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'saved-pdf'))
-        
-        # Ensure the directory exists
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-
-        # Create the full path for the PDF file
-        save_path = os.path.join(save_dir, f"{now}_{event_name}.pdf")
+        save_path = f"{pdf_save_path}/{now}_{event_name}.pdf"
         pdf.output(save_path)
        
         st.success(f"Results saved to {save_path}")
@@ -97,46 +86,66 @@ def save_pdf():
     except Exception as e:
         st.error(f"Failed to save PDF: {str(e)}")
 
-# Start detection process
-if start_detection and not st.session_state.detection_running:
-    st.session_state.detection_running = True
-    st.session_state.results = []
+# Embedding the HTML for local camera access
+st.markdown(
+    """
+    <div>
+        <video id="video" width="640" height="480" autoplay></video>
+        <script>
+        async function captureFrame() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg');
+        }
+        
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+            video.play();
 
-    cap = cv2.VideoCapture(0)
+            const captureButton = document.getElementById('captureButton');
+            captureButton.onclick = async () => {
+                const frame = await captureFrame();
+                window.streamlitSendFrame(frame);
+            };
+        });
+        </script>
+    </div>
+    """, unsafe_allow_html=True
+)
 
-    if not cap.isOpened():
-        st.error("Failed to open camera. Please check if the camera is connected properly.")
-    else:
-        while st.session_state.detection_running:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("Failed to read from camera.")
-                break
+# Capture frame button
+st.markdown('<button id="captureButton">Capture Frame</button>', unsafe_allow_html=True)
 
-            detections = detect_objects(frame)
-            for detection in detections:
-                x1, y1, x2, y2 = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(detection['ymax'])
-                label = detection['name']
-                confidence = detection['confidence']
+def handle_frame(frame_base64):
+    frame_data = base64.b64decode(frame_base64.split(",")[1])
+    nparr = np.frombuffer(frame_data, np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    detections = detect_objects(frame)
+    
+    for detection in detections:
+        x1, y1, x2, y2 = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(detection['ymax'])
+        label = detection['name']
+        confidence = detection['confidence']
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(frame, f"{label} {confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-                st.session_state.results.append({
-                    "frame": cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                    "detection": detection,
-                    "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                })
+        st.session_state.results.append({
+            "frame": cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+            "detection": detection,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
 
-            FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-            if stop_detection:
-                st.session_state.detection_running = False
-                cap.release()
-                save_pdf()
-                break
+# Bind Streamlit callback for frame capture
+st.streamlitSendFrame = handle_frame
 
 if stop_detection and st.session_state.detection_running:
     st.session_state.detection_running = False
-    st.session_state.results.append({"frame": np.zeros((100, 100, 3), dtype=np.uint8), "detection": {}, "timestamp": "Detection Stopped"})
     save_pdf()
