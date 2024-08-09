@@ -14,10 +14,32 @@ final_project/
 ├── frontend/
 │   ├── app.py                # Streamlit frontend application
 ├── backend/
+├── datasets/
+│   ├── test
+│   |    ├── images/
+│   |    └── labels/
+│   ├── val
+│   |    ├── images/
+│   |    └── labels/
+│   ├── train
+│   |    ├── images/
+│   |    └── labels/
 │   ├── main.py               # FastAPI backend application
 ├── saved-pdf/                # Directory for saving generated PDFs
 ├── requirements.txt          # Python dependencies
-└── README.md                 # Project documentation (this file)
+├── README.md                 # Project documentation (this file)
+├── config.py
+├── test_dangerous_objects_detection.py
+├── best.pt
+├── .gitignore
+├── paths.json
+├── Training_Model/
+│   ├── best.py
+│   ├── dog.jpeg
+│   ├── Training.ipynb
+│   ├── yolov8n.pt
+├── runs/
+│   ├── #files and subfolders that are created after training model
 ```
 
 ## Features

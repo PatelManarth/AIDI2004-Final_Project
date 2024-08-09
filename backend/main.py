@@ -3,10 +3,12 @@ import numpy as np
 import cv2
 from ultralytics import YOLO
 import logging
+from config import full_paths
 
 # Initialize FastAPI app and YOLOv8 model
+model_path=full_paths['models']['best_model']
 app = FastAPI()
-model = YOLO('best.pt')
+model = YOLO(model_path)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

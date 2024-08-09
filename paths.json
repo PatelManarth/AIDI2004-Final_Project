@@ -1,0 +1,24 @@
+{
+    "frontend": {
+        "app": "frontend/app.py"
+    },
+    "backend": {
+        "main": "backend/main.py"
+    },
+    "datasets": {
+        "test_images": "datasets/test/images/",
+        "train_images": "datasets/train/images/",
+        "val_images": "datasets/val/images/"
+    },
+    "saved_pdf": "saved-pdf/",
+    "models": {
+        "best_model": "best.pt",
+        "yolo_model": "Training_Model/yolov8n.pt"
+    },
+    "training": {
+        "notebook": "Training_Model/Training.ipynb"
+    },
+    "test": {
+        "test_script": "test_dangerous_objects_detection.py"
+    }
+}
