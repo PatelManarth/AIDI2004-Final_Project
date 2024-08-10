@@ -7,9 +7,15 @@ from ultralytics import YOLO
 import random
 from pathlib import Path
 
-# Path configuration
-BACKEND_DIR = os.path.abspath("backend")
-FRONTEND_DIR = os.path.abspath("frontend")
+
+#Incorrect path configuration
+BACKEND_DIR = os.path.abspath("bcknd")
+FRONTEND_DIR = os.path.abspath("frntnd")
+
+# CorrectPath configuration
+#BACKEND_DIR = os.path.abspath("backend")
+#FRONTEND_DIR = os.path.abspath("frontend")
+
 DATASET_DIR = os.path.abspath("datasets/test/images")
 YOLO_MODEL_PATH = "best.pt"
 
